@@ -32,14 +32,7 @@ def assign_value(values, box, value):
         assignments.append(values.copy())
     return values
 
-def naked_twins(values):
-    """Eliminate values using the naked twins strategy.
-    Args:
-        values(dict): a dictionary of the form {'box_name': '123456789', ...}
-
-    Returns:
-        the values dictionary with the naked twins eliminated from peers.
-    """
+def _naked_twins_helper(values):
     # Find 2 boxes in the same unit that
     # has the same 2 possible values
     # Eliminate these 2 values from all other peers in the unit
@@ -64,15 +57,34 @@ def naked_twins(values):
         # Peers to eliminate from
         peers_to_eliminate = list(set(unit) - set(chain(*naked_pair)) - set(solved_box))
 
-        # Eliminate from all other peers
+        # Eliminate from all peers
         for pair in naked_pair:
             value_to_eliminate = set(solution[pair[0]])
             for peer in peers_to_eliminate:
                 new_value = set(solution[peer]).difference(value_to_eliminate) 
                 new_value = list(new_value)
-                new_value.sort()
+                new_value.sort() # Set new value to the right format
                 solution = assign_value(solution, peer, ''.join(new_value))
     return solution
+
+def naked_twins(values):
+    """Eliminate values using the naked twins strategy.
+    Args:
+        values(dict): a dictionary of the form {'box_name': '123456789', ...}
+
+    Returns:
+        the values dictionary with the naked twins eliminated from peers.
+    """
+    solved_values = [box for box in values.keys() if len(values[box]) == 1]
+    stalled = False
+    while not stalled:
+        solved_values_before = len([box for box in values.keys() if len(values[box]) == 1])
+        values = _naked_twins_helper(values)
+        solved_values_after = len([box for box in values.keys() if len(values[box]) == 1])
+        stalled = solved_values_before == solved_values_after
+        if len([box for box in values.keys() if len(values[box]) == 0]):
+            return None
+    return values
 
 def grid_values(grid):
     """
